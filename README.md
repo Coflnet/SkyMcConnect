@@ -1,4 +1,4 @@
-This service is in charge of handling user to minecraft account connections.  
+This service is in charge of handling user to minecraft account connections.
 It verifies account ownership by requiring the user to create an auction or bid with a specific starting coin amount. 
 
 ## Setup
