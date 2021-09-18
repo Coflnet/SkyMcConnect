@@ -19,6 +19,8 @@ namespace Coflnet.Sky.McConnect
         private readonly string secret;
         public ConcurrentDictionary<string, MinecraftUuid> ToConnect = new ConcurrentDictionary<string, MinecraftUuid>();
 
+        private static Prometheus.Counter conAttempts = Prometheus.Metrics.CreateCounter("sky_mccon_attempts", "How many connection attempts were made within 10");
+
         public ConnectService(
             IConfiguration config,
                     IServiceScopeFactory scopeFactory)
@@ -31,9 +33,12 @@ namespace Coflnet.Sky.McConnect
 
         public async Task<ConnectionRequest> AddNewRequest(Models.User user, string minecraftUuid)
         {
+            conAttempts.Inc();
             var response = new ConnectionRequest();
             var accountInstance = user?.Accounts?.Where(a => a.AccountUuid == minecraftUuid).FirstOrDefault();
-            response.IsConnected = accountInstance?.Verified ?? false;
+            // TODO: remove this if when users are allowed to have and can switch between  multiple accounts
+            if (user?.Accounts?.OrderByDescending(a => a.UpdatedAt).Where(a => a.Verified).FirstOrDefault() == accountInstance)
+                response.IsConnected = accountInstance?.Verified ?? false;
 
             using (var scope = scopeFactory.CreateScope())
             {

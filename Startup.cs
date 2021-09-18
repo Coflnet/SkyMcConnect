@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Coflnet.Sky.McConnect.Models;
+using hypixel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Prometheus;
 
 namespace Coflnet.Sky.McConnect
 {
@@ -49,6 +51,7 @@ namespace Coflnet.Sky.McConnect
                 //    .EnableDetailedErrors()       // <-- with debugging (remove for production).
             );
             services.AddSingleton<ConnectService>();
+            services.AddJaeger();
 
         }
 
@@ -75,6 +78,7 @@ namespace Coflnet.Sky.McConnect
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapMetrics();
                 endpoints.MapControllers();
             });
         }
