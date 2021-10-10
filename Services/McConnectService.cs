@@ -81,6 +81,7 @@ namespace Coflnet.Sky.McConnect
 
         private async Task ValidateAmount(long amount, string uuid, int userId)
         {
+            Console.WriteLine("validating amount for " + uuid);
             if (!IsCorrectAmount(uuid, amount, userId))
                 return;
             using (var scope = scopeFactory.CreateScope())
@@ -107,7 +108,7 @@ namespace Coflnet.Sky.McConnect
         {
             foreach (var bid in auction.Bids)
             {
-                if (!connectSercie.ToConnect.TryGetValue(auction.AuctioneerId, out MinecraftUuid minecraftUuid))
+                if (!connectSercie.ToConnect.TryGetValue(bid.Bidder, out MinecraftUuid minecraftUuid))
                     continue;
                 Console.WriteLine("vaidating a bid " + auction.Uuid);
                 using var factoryScope = scopeFactory.CreateScope();
