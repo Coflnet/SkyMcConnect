@@ -39,6 +39,7 @@ namespace Coflnet.Sky.McConnect
 
             var newBid = KafkaConsumer.Consume<hypixel.SaveAuction>(kafkaHost, newBidTopic, NewBid, cancleToken, "mc-connect");
             Console.WriteLine("started consuming");
+            Console.WriteLine($"There are {connectSercie.ToConnect} waiting for validation");
             return Task.WhenAll(new Task[] { newAuction, newBid, ClearOldFromLookup(cancleToken) });
 
         }
@@ -61,12 +62,13 @@ namespace Coflnet.Sky.McConnect
                     Console.WriteLine("removing player" + item);
                     connectSercie.ToConnect.TryRemove(item, out MinecraftUuid uuid);
                 }
+                Console.WriteLine($"There are {connectSercie.ToConnect} waiting for validation");
             }
         }
 
         private async Task NewAuction(SaveAuction auction)
         {
-            if(auction.UId % 1000 == 0)
+            if (auction.UId % 1000 == 0)
                 Console.WriteLine("1000 auctions step " + DateTime.Now);
             if (!connectSercie.ToConnect.TryGetValue(auction.AuctioneerId, out MinecraftUuid minecraftUuid))
                 return;
@@ -113,7 +115,7 @@ namespace Coflnet.Sky.McConnect
                 using var scope = tracer.BuildSpan("BidValidation").WithTag("auctionId", auction.Uuid).WithTag("mcId", minecraftUuid.AccountUuid).StartActive();
                 await ValidateAmount(bid.Amount, bid.Bidder, minecraftUuid.Id);
             }
-            if(auction.UId % 500 == 0)
+            if (auction.UId % 500 == 0)
                 Console.WriteLine("500 bids step");
         }
 
