@@ -60,6 +60,7 @@ namespace Coflnet.Sky.McConnect
                     accountInstance.LastRequestedAt = DateTime.Now;
                     db.McIds.Update(accountInstance);
                     await db.SaveChangesAsync();
+                    ToConnect[minecraftUuid] = accountInstance;
                     response.Code = GetAmount(minecraftUuid, DateTime.Now, accountInstance.Id);
                     return response;
                 }
@@ -89,7 +90,8 @@ namespace Coflnet.Sky.McConnect
                         .Where(id => !id.Verified)
                         .Where(id => id.CreatedAt > minTime)
                         .ToDictionaryAsync(a => a.AccountUuid));
-                }catch(Exception e)
+                }
+                catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
                     Console.WriteLine(e.StackTrace);
