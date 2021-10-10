@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenTracing;
 
 namespace Coflnet.Sky.McConnect
 {
@@ -37,6 +38,7 @@ namespace Coflnet.Sky.McConnect
             var newAuction = KafkaConsumer.Consume<hypixel.SaveAuction>(kafkaHost, newAuctionTopic, NewAuction, cancleToken, "mc-connect");
 
             var newBid = KafkaConsumer.Consume<hypixel.SaveAuction>(kafkaHost, newBidTopic, NewBid, cancleToken, "mc-connect");
+            Console.WriteLine("started consuming");
             return Task.WhenAll(new Task[] { newAuction, newBid, ClearOldFromLookup(cancleToken) });
 
         }
@@ -63,8 +65,13 @@ namespace Coflnet.Sky.McConnect
 
         private async Task NewAuction(SaveAuction auction)
         {
+            if(auction.UId % 500 == 0)
+                Console.WriteLine("500 auctions step");
             if (!connectSercie.ToConnect.TryGetValue(auction.AuctioneerId, out MinecraftUuid minecraftUuid))
                 return;
+            using var factoryScope = scopeFactory.CreateScope();
+            var tracer = factoryScope.ServiceProvider.GetRequiredService<ITracer>();
+            using var scope = tracer.BuildSpan("AuctionValidation").WithTag("auctionId", auction.Uuid).WithTag("mcId", minecraftUuid.AccountUuid).StartActive();
             var uuid = auction.AuctioneerId;
             await ValidateAmount(auction.StartingBid, uuid, minecraftUuid.Id);
         }
@@ -99,8 +106,13 @@ namespace Coflnet.Sky.McConnect
             {
                 if (!connectSercie.ToConnect.TryGetValue(auction.AuctioneerId, out MinecraftUuid minecraftUuid))
                     continue;
+                using var factoryScope = scopeFactory.CreateScope();
+                var tracer = factoryScope.ServiceProvider.GetRequiredService<ITracer>();
+                using var scope = tracer.BuildSpan("BidValidation").WithTag("auctionId", auction.Uuid).WithTag("mcId", minecraftUuid.AccountUuid).StartActive();
                 await ValidateAmount(bid.Amount, bid.Bidder, minecraftUuid.Id);
             }
+            if(auction.UId % 500 == 0)
+                Console.WriteLine("500 bids step");
         }
 
 
