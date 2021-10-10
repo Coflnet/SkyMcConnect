@@ -21,6 +21,12 @@ namespace Coflnet.Sky.McConnect
 
         private static Prometheus.Counter conAttempts = Prometheus.Metrics.CreateCounter("sky_mccon_attempts", "How many connection attempts were made within 10");
 
+
+        /// <summary>
+        /// Creates a new Instance of the <see cref="ConnectService"/>
+        /// </summary>
+        /// <param name="config"></param>
+        /// <param name="scopeFactory"></param>
         public ConnectService(
             IConfiguration config,
                     IServiceScopeFactory scopeFactory)
@@ -31,6 +37,12 @@ namespace Coflnet.Sky.McConnect
             Console.WriteLine("created new");
         }
 
+        /// <summary>
+        /// Add a new <see cref="ConnectionRequest"/> to the service and db 
+        /// </summary>
+        /// <param name="user">The user to add the id to</param>
+        /// <param name="minecraftUuid">The uuid to add</param>
+        /// <returns></returns>
         public async Task<ConnectionRequest> AddNewRequest(Models.User user, string minecraftUuid)
         {
             conAttempts.Inc();
