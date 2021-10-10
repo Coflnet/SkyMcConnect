@@ -106,6 +106,7 @@ namespace Coflnet.Sky.McConnect
             {
                 if (!connectSercie.ToConnect.TryGetValue(auction.AuctioneerId, out MinecraftUuid minecraftUuid))
                     continue;
+                Console.WriteLine("vaidating a bid " + auction.Uuid);
                 using var factoryScope = scopeFactory.CreateScope();
                 var tracer = factoryScope.ServiceProvider.GetRequiredService<ITracer>();
                 using var scope = tracer.BuildSpan("BidValidation").WithTag("auctionId", auction.Uuid).WithTag("mcId", minecraftUuid.AccountUuid).StartActive();
