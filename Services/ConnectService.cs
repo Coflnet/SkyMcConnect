@@ -88,7 +88,7 @@ namespace Coflnet.Sky.McConnect
                     Console.WriteLine("migrated");
                     ToConnect = new ConcurrentDictionary<string, MinecraftUuid>(await db.McIds
                         .Where(id => !id.Verified)
-                        .Where(id => id.CreatedAt > minTime)
+                        .Where(id => id.LastRequestedAt > minTime)
                         .ToDictionaryAsync(a => a.AccountUuid));
                 }
                 catch (Exception e)
