@@ -81,13 +81,13 @@ namespace Coflnet.Sky.McConnect
             {
                 try
                 {
-
+                    var minTime = DateTime.Now.Subtract(TimeSpan.FromMinutes(15));
                     var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
                     await db.Database.MigrateAsync();
                     Console.WriteLine("migrated");
                     ToConnect = new ConcurrentDictionary<string, MinecraftUuid>(await db.McIds
                         .Where(id => !id.Verified)
-                        .Where(id => id.CreatedAt > DateTime.Now.Subtract(TimeSpan.FromMinutes(15)))
+                        .Where(id => id.CreatedAt > minTime)
                         .ToDictionaryAsync(a => a.AccountUuid));
                 }catch(Exception e)
                 {
