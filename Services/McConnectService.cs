@@ -65,8 +65,8 @@ namespace Coflnet.Sky.McConnect
 
         private async Task NewAuction(SaveAuction auction)
         {
-            if(auction.UId % 500 == 0)
-                Console.WriteLine("500 auctions step");
+            if(auction.UId % 1000 == 0)
+                Console.WriteLine("1000 auctions step " + DateTime.Now);
             if (!connectSercie.ToConnect.TryGetValue(auction.AuctioneerId, out MinecraftUuid minecraftUuid))
                 return;
             using var factoryScope = scopeFactory.CreateScope();

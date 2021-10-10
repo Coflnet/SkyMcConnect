@@ -76,15 +76,26 @@ namespace Coflnet.Sky.McConnect
 
         public async Task Setup()
         {
+            Console.WriteLine("setting up");
             using (var scope = scopeFactory.CreateScope())
             {
-                var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
-                await db.Database.MigrateAsync();
-                ToConnect = new ConcurrentDictionary<string, MinecraftUuid>(await db.McIds
-                    .Where(id => !id.Verified)
-                    .Where(id => id.CreatedAt > DateTime.Now.Subtract(TimeSpan.FromMinutes(15)))
-                    .ToDictionaryAsync(a => a.AccountUuid));
+                try
+                {
+
+                    var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
+                    await db.Database.MigrateAsync();
+                    Console.WriteLine("migrated");
+                    ToConnect = new ConcurrentDictionary<string, MinecraftUuid>(await db.McIds
+                        .Where(id => !id.Verified)
+                        .Where(id => id.CreatedAt > DateTime.Now.Subtract(TimeSpan.FromMinutes(15)))
+                        .ToDictionaryAsync(a => a.AccountUuid));
+                }catch(Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    Console.WriteLine(e.StackTrace);
+                }
             }
+            Console.WriteLine("done with setup");
         }
 
         public int GetAmount(string uuid, DateTime timeStamp, int conId)
