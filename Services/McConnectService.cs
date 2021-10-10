@@ -58,6 +58,7 @@ namespace Coflnet.Sky.McConnect
                 }
                 foreach (var item in toRemove)
                 {
+                    Console.WriteLine("removing player" + item);
                     connectSercie.ToConnect.TryRemove(item, out MinecraftUuid uuid);
                 }
             }
