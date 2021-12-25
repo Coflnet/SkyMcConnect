@@ -81,9 +81,10 @@ namespace Coflnet.Sky.McConnect
 
         private async Task ValidateAmount(long amount, string uuid, int userId)
         {
-            Console.WriteLine("validating amount for " + uuid);
+            Console.Write("validating amount for " + uuid);
             if (!IsCorrectAmount(uuid, amount, userId))
                 return;
+            Console.WriteLine("correct amount");
             using (var scope = scopeFactory.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
@@ -100,7 +101,9 @@ namespace Coflnet.Sky.McConnect
         {
             var time = DateTime.Now;
             var secondTime = time.Subtract(TimeSpan.FromMinutes(5));
-            return amount == connectSercie.GetAmount(uuid, time, userId) || amount == connectSercie.GetAmount(uuid, secondTime, userId);
+            var targetAmount = connectSercie.GetAmount(uuid, time, userId);
+            Console.WriteLine($"Should be {targetAmount} is {amount}");
+            return amount == targetAmount || amount == connectSercie.GetAmount(uuid, secondTime, userId);
         }
 
 
