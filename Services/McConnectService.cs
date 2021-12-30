@@ -89,7 +89,7 @@ namespace Coflnet.Sky.McConnect
             {
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
 
-                var minecraftUuid = await db.McIds.Where(id => id.AccountUuid == uuid).FirstAsync();
+                var minecraftUuid = await db.McIds.Where(id => id.AccountUuid == uuid && id.User == db.Users.Where(u=>u.Id == userId).First()).FirstAsync();
                 minecraftUuid.Verified = true;
                 minecraftUuid.UpdatedAt = DateTime.Now;
                 db.McIds.Update(minecraftUuid);
