@@ -84,12 +84,13 @@ namespace Coflnet.Sky.McConnect
             Console.Write("validating amount for " + uuid);
             if (!IsCorrectAmount(uuid, amount, userId))
                 return;
-            Console.WriteLine("correct amount");
+            Console.WriteLine($"correct amount user {userId}");
             using (var scope = scopeFactory.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
 
-                var minecraftUuid = await db.McIds.Where(id => id.AccountUuid == uuid && id.User == db.Users.Where(u=>u.Id == userId).First()).FirstAsync();
+                var minecraftUuid = (await db.Users.Where(u=>u.Id == userId).Include(u=>u.Accounts).FirstAsync())
+                    .Accounts.Where(a=>a.AccountUuid == uuid).First();
                 minecraftUuid.Verified = true;
                 minecraftUuid.UpdatedAt = DateTime.Now;
                 db.McIds.Update(minecraftUuid);
