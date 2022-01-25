@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Coflnet.Kafka;
 using Coflnet.Sky.McConnect.Models;
+using Confluent.Kafka;
 using hypixel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +20,7 @@ namespace Coflnet.Sky.McConnect
         private IConfiguration configuration;
         private IServiceScopeFactory scopeFactory;
         private ConnectService connectSercie;
+        private ProducerConfig producerConfig;
 
         public McConnectService(IConfiguration config,
                     IServiceScopeFactory scopeFactory,
@@ -27,6 +29,12 @@ namespace Coflnet.Sky.McConnect
             configuration = config;
             this.scopeFactory = scopeFactory;
             this.connectSercie = connectSercie;
+
+            producerConfig = new ProducerConfig
+            {
+                BootstrapServers = configuration["KAFKA_HOST"],
+                LingerMs = 2
+            };
         }
 
         private Task ListenForValidations(CancellationToken cancleToken)
@@ -89,11 +97,17 @@ namespace Coflnet.Sky.McConnect
             {
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
 
-                var minecraftUuid = await db.McIds.Where(id => id.Id == linkId).FirstAsync();
+                var minecraftUuid = await db.McIds.Where(id => id.Id == linkId).Include(id=>id.User).FirstAsync();
                 minecraftUuid.Verified = true;
                 minecraftUuid.UpdatedAt = DateTime.Now;
+                var eventTask = ProduceEvent(new VerificationEvent()
+                {
+                    MinecraftUuid = minecraftUuid.AccountUuid,
+                    UserId = minecraftUuid.User.ExternalId
+                });
                 db.McIds.Update(minecraftUuid);
                 await db.SaveChangesAsync();
+                await eventTask;
             }
         }
 
@@ -123,6 +137,17 @@ namespace Coflnet.Sky.McConnect
                 Console.WriteLine("500 bids step");
         }
 
+        public async Task ProduceEvent(VerificationEvent transactionEvent)
+        {
+            using (var p = new ProducerBuilder<Null, VerificationEvent>(producerConfig).SetValueSerializer(SerializerFactory.GetSerializer<VerificationEvent>()).Build())
+            {
+                await p.ProduceAsync(configuration["TOICS:VERIFIED"], new Message<Null, VerificationEvent>()
+                {
+                    Value = transactionEvent
+                });
+            }
+        }
+
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -131,9 +156,4 @@ namespace Coflnet.Sky.McConnect
         }
     }
 
-    public class ConnectionRequest
-    {
-        public int Code { get; set; }
-        public bool IsConnected { get; set; }
-    }
 }
