@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using OpenTracing;
 
 namespace Coflnet.Sky.McConnect
@@ -21,10 +22,11 @@ namespace Coflnet.Sky.McConnect
         private IServiceScopeFactory scopeFactory;
         private ConnectService connectSercie;
         private ProducerConfig producerConfig;
+        private ILogger<McConnectService> logger;
 
         public McConnectService(IConfiguration config,
                     IServiceScopeFactory scopeFactory,
-                    ConnectService connectSercie)
+                    ConnectService connectSercie, ILogger<McConnectService> logger)
         {
             configuration = config;
             this.scopeFactory = scopeFactory;
@@ -35,6 +37,7 @@ namespace Coflnet.Sky.McConnect
                 BootstrapServers = configuration["KAFKA_HOST"],
                 LingerMs = 2
             };
+            this.logger = logger;
         }
 
         private Task ListenForValidations(CancellationToken cancleToken)
@@ -97,16 +100,17 @@ namespace Coflnet.Sky.McConnect
             {
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
 
-                var minecraftUuid = await db.McIds.Where(id => id.Id == linkId).Include(id=>id.User).FirstAsync();
+                var minecraftUuid = await db.McIds.Where(id => id.Id == linkId).Include(id => id.User).FirstAsync();
                 minecraftUuid.Verified = true;
                 minecraftUuid.UpdatedAt = DateTime.Now;
+                db.McIds.Update(minecraftUuid);
+                await db.SaveChangesAsync();
+
                 var eventTask = ProduceEvent(new VerificationEvent()
                 {
                     MinecraftUuid = minecraftUuid.AccountUuid,
                     UserId = minecraftUuid.User.ExternalId
                 });
-                db.McIds.Update(minecraftUuid);
-                await db.SaveChangesAsync();
                 await eventTask;
             }
         }
@@ -139,12 +143,20 @@ namespace Coflnet.Sky.McConnect
 
         public async Task ProduceEvent(VerificationEvent transactionEvent)
         {
-            using (var p = new ProducerBuilder<Null, VerificationEvent>(producerConfig).SetValueSerializer(SerializerFactory.GetSerializer<VerificationEvent>()).Build())
+            try
             {
-                await p.ProduceAsync(configuration["TOICS:VERIFIED"], new Message<Null, VerificationEvent>()
+
+                using (var p = new ProducerBuilder<Null, VerificationEvent>(producerConfig).SetValueSerializer(SerializerFactory.GetSerializer<VerificationEvent>()).Build())
                 {
-                    Value = transactionEvent
-                });
+                    await p.ProduceAsync(configuration["TOICS:VERIFIED"], new Message<Null, VerificationEvent>()
+                    {
+                        Value = transactionEvent
+                    });
+                }
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Trying to produce verification event");
             }
         }
 
