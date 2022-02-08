@@ -93,6 +93,7 @@ namespace Coflnet.Sky.McConnect
         private async Task ValidateAmount(long amount, string uuid, int linkId)
         {
             Console.Write("validating amount for " + uuid);
+            amount = amount % 1000;
             if (!IsCorrectAmount(uuid, amount, linkId))
                 return;
             Console.WriteLine($"correct amount user {linkId}");
@@ -119,7 +120,7 @@ namespace Coflnet.Sky.McConnect
         {
             var time = DateTime.Now;
             var secondTime = time.Subtract(TimeSpan.FromMinutes(5));
-            var targetAmount = connectSercie.GetAmount(uuid, time, userId);
+            var targetAmount = connectSercie.GetAmount(uuid, time, userId) ;
             Console.WriteLine($"Should be {targetAmount} is {amount}");
             return amount == targetAmount || amount == connectSercie.GetAmount(uuid, secondTime, userId);
         }
