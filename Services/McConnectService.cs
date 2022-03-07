@@ -46,9 +46,21 @@ namespace Coflnet.Sky.McConnect
             var newAuctionTopic = configuration["TOPICS:NEW_AUCTION"];
             var newBidTopic = configuration["TOPICS:NEW_BID"];
 
-            var newAuction = KafkaConsumer.Consume<hypixel.SaveAuction>(kafkaHost, newAuctionTopic, NewAuction, cancleToken, "mc-connect");
+            var newAuction = KafkaConsumer.ConsumeBatch<hypixel.SaveAuction>(kafkaHost, newAuctionTopic, async auctions =>
+            {
+                foreach (var item in auctions)
+                {
+                    await NewAuction(item);
+                }
+            }, cancleToken, "mc-connect");
 
-            var newBid = KafkaConsumer.Consume<hypixel.SaveAuction>(kafkaHost, newBidTopic, NewBid, cancleToken, "mc-connect");
+            var newBid = KafkaConsumer.ConsumeBatch<hypixel.SaveAuction>(kafkaHost, newBidTopic, async bids =>
+            {
+                foreach (var item in bids)
+                {
+                    await NewBid(item);
+                }
+            }, cancleToken, "mc-connect");
             Console.WriteLine("started consuming");
             Console.WriteLine($"There are {connectSercie.ToConnect.Count} waiting for validation");
             await Task.WhenAny(new Task[] { newAuction, newBid, ClearOldFromLookup(cancleToken) });
@@ -121,7 +133,7 @@ namespace Coflnet.Sky.McConnect
         {
             var time = DateTime.Now;
             var secondTime = time.Subtract(TimeSpan.FromMinutes(5));
-            var targetAmount = connectSercie.GetAmount(uuid, time, userId) ;
+            var targetAmount = connectSercie.GetAmount(uuid, time, userId);
             Console.WriteLine($"Should be {targetAmount} is {amount}");
             return amount == targetAmount || amount == connectSercie.GetAmount(uuid, secondTime, userId);
         }
