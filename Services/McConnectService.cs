@@ -40,7 +40,7 @@ namespace Coflnet.Sky.McConnect
             this.logger = logger;
         }
 
-        private Task ListenForValidations(CancellationToken cancleToken)
+        private async Task ListenForValidations(CancellationToken cancleToken)
         {
             var kafkaHost = configuration["KAFKA_HOST"];
             var newAuctionTopic = configuration["TOPICS:NEW_AUCTION"];
@@ -51,7 +51,8 @@ namespace Coflnet.Sky.McConnect
             var newBid = KafkaConsumer.Consume<hypixel.SaveAuction>(kafkaHost, newBidTopic, NewBid, cancleToken, "mc-connect");
             Console.WriteLine("started consuming");
             Console.WriteLine($"There are {connectSercie.ToConnect.Count} waiting for validation");
-            return Task.WhenAll(new Task[] { newAuction, newBid, ClearOldFromLookup(cancleToken) });
+            await Task.WhenAny(new Task[] { newAuction, newBid, ClearOldFromLookup(cancleToken) });
+            throw new Exception("either bids or auctions stopped consuming");
 
         }
 
