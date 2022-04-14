@@ -5,10 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Coflnet.Sky.McConnect.Models;
-using hypixel;
+using Coflnet.Sky.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Confluent.Kafka;
+using Microsoft.Extensions.Logging;
 
 namespace Coflnet.Sky.McConnect
 {
@@ -18,6 +20,8 @@ namespace Coflnet.Sky.McConnect
         private IConfiguration config;
         private readonly string secret;
         public ConcurrentDictionary<string, MinecraftUuid> ToConnect = new ConcurrentDictionary<string, MinecraftUuid>();
+        private ILogger<ConnectService> logger;
+        private ProducerConfig producerConfig;
 
         private static Prometheus.Counter conAttempts = Prometheus.Metrics.CreateCounter("sky_mccon_attempts", "How many connection attempts were made within 10");
 
@@ -29,12 +33,21 @@ namespace Coflnet.Sky.McConnect
         /// <param name="scopeFactory"></param>
         public ConnectService(
             IConfiguration config,
-                    IServiceScopeFactory scopeFactory)
+                    IServiceScopeFactory scopeFactory,
+                    ILogger<ConnectService> logger)
         {
             this.scopeFactory = scopeFactory;
             this.config = config;
             this.secret = config["TOKEN_SECRET"];
             Console.WriteLine("created new");
+            this.logger = logger;
+
+
+            producerConfig = new ProducerConfig
+            {
+                BootstrapServers = config["KAFKA_HOST"],
+                LingerMs = 2
+            };
         }
 
         /// <summary>
@@ -105,6 +118,45 @@ namespace Coflnet.Sky.McConnect
             var bytes = Encoding.UTF8.GetBytes(uuid.ToLower() + conId + timeStamp.RoundDown(TimeSpan.FromMinutes(10)).ToString() + secret);
             var hash = System.Security.Cryptography.SHA512.Create();
             return Math.Abs(BitConverter.ToInt32(hash.ComputeHash(bytes))) % 980 + 19;
+        }
+
+        public async Task ValidatedLink(int linkId)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
+
+                var minecraftUuid = await db.McIds.Where(id => id.Id == linkId).Include(id => id.User).FirstAsync();
+                minecraftUuid.Verified = true;
+                minecraftUuid.UpdatedAt = DateTime.Now;
+                db.McIds.Update(minecraftUuid);
+                await db.SaveChangesAsync();
+
+                var eventTask = ProduceEvent(new VerificationEvent()
+                {
+                    MinecraftUuid = minecraftUuid.AccountUuid,
+                    UserId = minecraftUuid.User.ExternalId
+                });
+                await eventTask;
+            }
+        }
+
+        public async Task ProduceEvent(VerificationEvent transactionEvent)
+        {
+            try
+            {
+                using (var p = new ProducerBuilder<Null, VerificationEvent>(producerConfig).SetValueSerializer(SerializerFactory.GetSerializer<VerificationEvent>()).Build())
+                {
+                    await p.ProduceAsync(config["TOPICS:VERIFIED"], new Message<Null, VerificationEvent>()
+                    {
+                        Value = transactionEvent
+                    });
+                }
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Trying to produce verification event");
+            }
         }
     }
 }

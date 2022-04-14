@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Coflnet.Kafka;
 using Coflnet.Sky.McConnect.Models;
 using Confluent.Kafka;
-using hypixel;
+using Coflnet.Sky.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +21,6 @@ namespace Coflnet.Sky.McConnect
         private IConfiguration configuration;
         private IServiceScopeFactory scopeFactory;
         private ConnectService connectSercie;
-        private ProducerConfig producerConfig;
         private ILogger<McConnectService> logger;
 
         public McConnectService(IConfiguration config,
@@ -32,11 +31,6 @@ namespace Coflnet.Sky.McConnect
             this.scopeFactory = scopeFactory;
             this.connectSercie = connectSercie;
 
-            producerConfig = new ProducerConfig
-            {
-                BootstrapServers = configuration["KAFKA_HOST"],
-                LingerMs = 2
-            };
             this.logger = logger;
         }
 
@@ -46,7 +40,7 @@ namespace Coflnet.Sky.McConnect
             var newAuctionTopic = configuration["TOPICS:NEW_AUCTION"];
             var newBidTopic = configuration["TOPICS:NEW_BID"];
 
-            var newAuction = KafkaConsumer.ConsumeBatch<hypixel.SaveAuction>(kafkaHost, newAuctionTopic, async auctions =>
+            var newAuction = KafkaConsumer.ConsumeBatch<SaveAuction>(kafkaHost, newAuctionTopic, async auctions =>
             {
                 foreach (var item in auctions)
                 {
@@ -54,7 +48,7 @@ namespace Coflnet.Sky.McConnect
                 }
             }, cancleToken, "mc-connect");
 
-            var newBid = KafkaConsumer.ConsumeBatch<hypixel.SaveAuction>(kafkaHost, newBidTopic, async bids =>
+            var newBid = KafkaConsumer.ConsumeBatch<SaveAuction>(kafkaHost, newBidTopic, async bids =>
             {
                 foreach (var item in bids)
                 {
@@ -110,23 +104,14 @@ namespace Coflnet.Sky.McConnect
             if (!IsCorrectAmount(uuid, amount, linkId))
                 return;
             Console.WriteLine($"correct amount user {linkId}");
-            using (var scope = scopeFactory.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
+            await connectSercie.ValidatedLink(linkId);
+        }
 
-                var minecraftUuid = await db.McIds.Where(id => id.Id == linkId).Include(id => id.User).FirstAsync();
-                minecraftUuid.Verified = true;
-                minecraftUuid.UpdatedAt = DateTime.Now;
-                db.McIds.Update(minecraftUuid);
-                await db.SaveChangesAsync();
+        
 
-                var eventTask = ProduceEvent(new VerificationEvent()
-                {
-                    MinecraftUuid = minecraftUuid.AccountUuid,
-                    UserId = minecraftUuid.User.ExternalId
-                });
-                await eventTask;
-            }
+        public async Task ForceVerify(long amount, string uuid, int linkId)
+        {
+            await ValidateAmount(amount, uuid, linkId);
         }
 
         private bool IsCorrectAmount(string uuid, long amount, int userId)
@@ -153,25 +138,6 @@ namespace Coflnet.Sky.McConnect
             }
             if (auction.UId % 500 == 0)
                 Console.WriteLine("500 bids step");
-        }
-
-        public async Task ProduceEvent(VerificationEvent transactionEvent)
-        {
-            try
-            {
-
-                using (var p = new ProducerBuilder<Null, VerificationEvent>(producerConfig).SetValueSerializer(SerializerFactory.GetSerializer<VerificationEvent>()).Build())
-                {
-                    await p.ProduceAsync(configuration["TOICS:VERIFIED"], new Message<Null, VerificationEvent>()
-                    {
-                        Value = transactionEvent
-                    });
-                }
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e, "Trying to produce verification event");
-            }
         }
 
 

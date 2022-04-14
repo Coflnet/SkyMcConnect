@@ -59,5 +59,14 @@ namespace Coflnet.Sky.McConnect.Controllers
         {
             return await db.McIds.Where(id=>id.AccountUuid == mcUuid).Select(id=>id.User).FirstOrDefaultAsync();
         }
+        [HttpPost]
+        [Route("user/{userId}/verify")]
+        public async Task GetUser(string userId, string mcUuid)
+        {
+            var user = await GetOrCreateUser(userId);
+            var req = await connectService.AddNewRequest(user,mcUuid);
+            var con = await db.McIds.Where(i=>i.User == user && i.AccountUuid == mcUuid).FirstAsync();
+            await connectService.ValidatedLink(con.Id);
+        }
     }
 }
