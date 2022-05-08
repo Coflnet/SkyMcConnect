@@ -57,7 +57,7 @@ namespace Coflnet.Sky.McConnect.Controllers
         [Route("minecraft/{mcUuid}")]
         public async Task<User> GetUser(string mcUuid)
         {
-            return await db.McIds.Where(id=>id.AccountUuid == mcUuid).Select(id=>id.User).FirstOrDefaultAsync();
+            return await db.McIds.Where(id=>id.AccountUuid == mcUuid && id.Verified).OrderByDescending(m=>m.UpdatedAt).Select(id=>id.User).FirstOrDefaultAsync();
         }
         [HttpPost]
         [Route("user/{userId}/verify")]
