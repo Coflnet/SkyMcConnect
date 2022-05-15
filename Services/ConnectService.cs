@@ -62,8 +62,8 @@ namespace Coflnet.Sky.McConnect
             var response = new ConnectionRequest();
             var accountInstance = user?.Accounts?.Where(a => a.AccountUuid == minecraftUuid).FirstOrDefault();
             // uses are allowed to have multiple accounts there is no "active" one
-            //if (user?.Accounts?.OrderByDescending(a => a.UpdatedAt).Where(a => a.Verified).FirstOrDefault() == accountInstance)
-            //    response.IsConnected = accountInstance?.Verified ?? false;
+            if (user?.Accounts?.OrderByDescending(a => a.UpdatedAt).Where(a => a.Verified).Any(a=>a.Id == accountInstance.Id) ?? false)
+                response.IsConnected = accountInstance?.Verified ?? false;
 
             using (var scope = scopeFactory.CreateScope())
             {
