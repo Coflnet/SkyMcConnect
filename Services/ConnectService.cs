@@ -127,6 +127,7 @@ namespace Coflnet.Sky.McConnect
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
 
                 var minecraftUuid = await db.McIds.Where(id => id.Id == linkId).Include(id => id.User).FirstAsync();
+                var exisintCount = await db.McIds.Where(id => id.AccountUuid == minecraftUuid.AccountUuid && id.Verified).CountAsync();
                 minecraftUuid.Verified = true;
                 minecraftUuid.UpdatedAt = DateTime.Now;
                 db.McIds.Update(minecraftUuid);
@@ -135,7 +136,8 @@ namespace Coflnet.Sky.McConnect
                 var eventTask = ProduceEvent(new VerificationEvent()
                 {
                     MinecraftUuid = minecraftUuid.AccountUuid,
-                    UserId = minecraftUuid.User.ExternalId
+                    UserId = minecraftUuid.User.ExternalId,
+                    ExistingConCount = exisintCount
                 });
                 await eventTask;
             }

@@ -20,5 +20,10 @@ namespace Coflnet.Sky.McConnect.Models
         /// <value></value>
         [DataMember(Name = "uuid")]
         public string MinecraftUuid { get; set; }
+        /// <summary>
+        /// How many existing verifications are on this minecraft account
+        /// </summary>
+        [DataMember(Name = "existing")]
+        public int ExistingConCount { get; set; }
     }
 }
