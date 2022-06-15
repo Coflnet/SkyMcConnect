@@ -117,7 +117,7 @@ namespace Coflnet.Sky.McConnect
         {
             var bytes = Encoding.UTF8.GetBytes(uuid.ToLower() + conId + timeStamp.RoundDown(TimeSpan.FromMinutes(10)).ToString() + secret);
             var hash = System.Security.Cryptography.SHA512.Create();
-            return Math.Abs(BitConverter.ToInt32(hash.ComputeHash(bytes))) % 980 + 19;
+            return Math.Abs(BitConverter.ToInt32(hash.ComputeHash(bytes))) % 980 + 14;
         }
 
         public async Task ValidatedLink(int linkId)
