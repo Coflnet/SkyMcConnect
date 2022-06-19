@@ -141,6 +141,7 @@ namespace Coflnet.Sky.McConnect
                     ExistingConCount = existingCount
                 });
                 await eventTask;
+                logger.LogInformation("event produced");
             }
         }
 
