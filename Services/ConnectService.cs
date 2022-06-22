@@ -65,6 +65,9 @@ namespace Coflnet.Sky.McConnect
             //if (user?.Accounts?.OrderByDescending(a => a.UpdatedAt).Where(a => a.Verified).FirstOrDefault() == accountInstance)
             response.IsConnected = accountInstance?.Verified ?? false;
 
+            if(minecraftUuid == null)
+                throw new CoflnetException("uuid_is_null", "minecraftUuid is null");
+
             using (var scope = scopeFactory.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
