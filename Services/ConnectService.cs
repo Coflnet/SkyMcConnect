@@ -14,6 +14,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Coflnet.Sky.McConnect
 {
+    /// <summary>
+    /// Client service for mc connect aka acoount verify 
+    /// </summary>
     public class ConnectService
     {
         private IServiceScopeFactory scopeFactory;
