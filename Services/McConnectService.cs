@@ -57,9 +57,22 @@ namespace Coflnet.Sky.McConnect
             }, cancleToken, "mc-connect");
             Console.WriteLine("started consuming");
             Console.WriteLine($"There are {connectSercie.ToConnect.Count} waiting for validation");
-            await Task.WhenAny(new Task[] { newAuction, newBid, ClearOldFromLookup(cancleToken) });
+            await Task.WhenAny(new Task[] { Wrap(newAuction,"auctions"), Wrap(newBid, "bids"), Wrap(ClearOldFromLookup(cancleToken), "clear") });
             throw new Exception("either bids or auctions stopped consuming");
 
+        }
+
+        private async Task Wrap(Task toWarp, string message)
+        {
+            try
+            {
+                await toWarp;
+            }
+            catch (System.Exception e)
+            {
+                logger.LogError(e, message);
+                throw;
+            }
         }
 
         private async Task ClearOldFromLookup(CancellationToken cancelToken)
