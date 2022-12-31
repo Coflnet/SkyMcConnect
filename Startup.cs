@@ -62,11 +62,15 @@ namespace Coflnet.Sky.McConnect
             {
                 app.UseDeveloperExceptionPage();
             }
+            app.UseExceptionHandler(errorApp =>
+            {
+                ErrorHandler.Add(app.ApplicationServices.GetRequiredService<ILogger<Startup>>(), errorApp, "mc-connect");
+            });
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "SkyMcConnect v1");
-                    c.RoutePrefix = "api";
+                c.RoutePrefix = "api";
             });
 
 

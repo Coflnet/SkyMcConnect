@@ -12,7 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using OpenTracing;
+using System.Diagnostics;
 
 namespace Coflnet.Sky.McConnect
 {
@@ -104,8 +104,8 @@ namespace Coflnet.Sky.McConnect
             if (!connectSercie.ToConnect.TryGetValue(auction.AuctioneerId, out MinecraftUuid minecraftUuid))
                 return;
             using var factoryScope = scopeFactory.CreateScope();
-            var tracer = factoryScope.ServiceProvider.GetRequiredService<ITracer>();
-            using var scope = tracer.BuildSpan("AuctionValidation").WithTag("auctionId", auction.Uuid).WithTag("mcId", minecraftUuid.AccountUuid).StartActive();
+            var tracer = factoryScope.ServiceProvider.GetRequiredService<ActivitySource>();
+            using var scope = tracer.StartActivity("AuctionValidation").AddTag("auctionId", auction.Uuid).AddTag("mcId", minecraftUuid.AccountUuid);
             var uuid = auction.AuctioneerId;
             await ValidateAmount(auction.StartingBid, uuid, minecraftUuid.Id);
         }
@@ -145,8 +145,8 @@ namespace Coflnet.Sky.McConnect
                     continue;
                 Console.WriteLine("vaidating a bid " + auction.Uuid);
                 using var factoryScope = scopeFactory.CreateScope();
-                var tracer = factoryScope.ServiceProvider.GetRequiredService<ITracer>();
-                using var scope = tracer.BuildSpan("BidValidation").WithTag("auctionId", auction.Uuid).WithTag("mcId", minecraftUuid.AccountUuid).StartActive();
+                var tracer = factoryScope.ServiceProvider.GetRequiredService<ActivitySource>();
+                using var scope = tracer.StartActivity("BidValidation").AddTag("auctionId", auction.Uuid).AddTag("mcId", minecraftUuid.AccountUuid);
                 await ValidateAmount(bid.Amount, bid.Bidder, minecraftUuid.Id);
             }
             if (auction.UId % 500 == 0)
