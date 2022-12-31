@@ -51,7 +51,7 @@ namespace Coflnet.Sky.McConnect
                 //    .EnableDetailedErrors()       // <-- with debugging (remove for production).
             );
             services.AddSingleton<ConnectService>();
-            services.AddJaeger();
+            services.AddJaeger(Configuration);
 
         }
 
