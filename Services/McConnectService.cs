@@ -39,6 +39,7 @@ namespace Coflnet.Sky.McConnect
             var kafkaHost = configuration["KAFKA_HOST"];
             var newAuctionTopic = configuration["TOPICS:NEW_AUCTION"];
             var newBidTopic = configuration["TOPICS:NEW_BID"];
+            var consumerGroup = "mc-connect" + System.Net.Dns.GetHostName().Last();
 
             var newAuction = KafkaConsumer.ConsumeBatch<SaveAuction>(kafkaHost, newAuctionTopic, async auctions =>
             {
@@ -46,7 +47,7 @@ namespace Coflnet.Sky.McConnect
                 {
                     await NewAuction(item);
                 }
-            }, cancleToken, "mc-connect");
+            }, cancleToken, consumerGroup);
 
             var newBid = KafkaConsumer.ConsumeBatch<SaveAuction>(kafkaHost, newBidTopic, async bids =>
             {
@@ -54,7 +55,7 @@ namespace Coflnet.Sky.McConnect
                 {
                     await NewBid(item);
                 }
-            }, cancleToken, "mc-connect");
+            }, cancleToken, consumerGroup);
             Console.WriteLine("started consuming");
             Console.WriteLine($"There are {connectSercie.ToConnect.Count} waiting for validation");
             await Task.WhenAny(new Task[] { Wrap(newAuction,"auctions"), Wrap(newBid, "bids"), Wrap(ClearOldFromLookup(cancleToken), "clear") });
