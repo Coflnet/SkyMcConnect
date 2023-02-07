@@ -17,7 +17,7 @@ namespace Coflnet.Sky.McConnect.Models
         [DataMember]
         public DateTime UpdatedAt { get; set; }
         public DateTime CreatedAt { get; set; }
-        [System.Text.Json.Serialization.JsonIgnore]
+        [DataMember]
         public DateTime LastRequestedAt { get; set; }
 
         public MinecraftUuid()
