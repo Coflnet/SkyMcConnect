@@ -5,6 +5,9 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Client\**\*</DefaultItemExcludes>
+  </PropertyGroup>
   
   <ItemGroup>
     <ProjectReference Include="../dev/hypixel.csproj" />

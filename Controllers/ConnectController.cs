@@ -48,7 +48,7 @@ namespace Coflnet.Sky.McConnect.Controllers
         [Route("users")]
         public async Task<IEnumerable<User>> GetUsers(int amount = 1000, int offset = 0)
         {
-            return await db.Users.OrderBy(u=>u.Id).Skip(offset).Take(amount).ToListAsync();
+            return await db.Users.OrderBy(u => u.Id).Skip(offset).Take(amount).ToListAsync();
         }
         /// <summary>
         /// Get all users stored which may or may not have a connected account
@@ -58,8 +58,17 @@ namespace Coflnet.Sky.McConnect.Controllers
         [Route("users/connected")]
         public async Task<IEnumerable<User>> GetVerifiedUsers(int amount = 1000, int offset = 0)
         {
-            return await db.Users.Where(u=>u.Accounts.Where(a=>a.Verified).Any()).Include(u => u.Accounts.Where(a=>a.Verified))
-                        .OrderBy(u=>u.Id).Skip(offset).Take(amount).ToListAsync();
+            return await db.Users.Where(u => u.Accounts.Where(a => a.Verified).Any()).Include(u => u.Accounts.Where(a => a.Verified))
+                        .OrderBy(u => u.Id).Skip(offset).Take(amount).ToListAsync();
+        }
+        /// <summary>
+        /// Get all users which ids is in the list
+        /// </summary>
+        [HttpGet]
+        [Route("users/ids")]
+        public async Task<IEnumerable<User>> GetUsersByIds([FromQuery] List<string> externalIds)
+        {
+            return await db.Users.Where(u => externalIds.Contains(u.ExternalId)).Include(u => u.Accounts.Where(a => a.Verified)).ToListAsync();
         }
 
         private async Task<User> GetOrCreateUser(string userId, bool blockSave = false)
