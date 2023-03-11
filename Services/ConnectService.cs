@@ -76,11 +76,11 @@ namespace Coflnet.Sky.McConnect
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
                 if (accountInstance != null)
                 {
-                    accountInstance.LastRequestedAt = DateTime.Now;
+                    accountInstance.LastRequestedAt = DateTime.UtcNow;
                     db.McIds.Update(accountInstance);
                     await db.SaveChangesAsync();
                     ToConnect[minecraftUuid] = accountInstance;
-                    response.Code = GetAmount(minecraftUuid, DateTime.Now, accountInstance.Id);
+                    response.Code = GetAmount(minecraftUuid, DateTime.UtcNow, accountInstance.Id);
                     return response;
                 }
 
@@ -89,7 +89,7 @@ namespace Coflnet.Sky.McConnect
                 db.Update(user);
                 await db.SaveChangesAsync();
                 ToConnect[minecraftUuid] = newId;
-                response.Code = GetAmount(minecraftUuid, DateTime.Now, newId.Id);
+                response.Code = GetAmount(minecraftUuid, DateTime.UtcNow, newId.Id);
                 return response;
             }
         }
@@ -101,7 +101,7 @@ namespace Coflnet.Sky.McConnect
             {
                 try
                 {
-                    var minTime = DateTime.Now.Subtract(TimeSpan.FromMinutes(15));
+                    var minTime = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(15));
                     var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
                     await db.Database.MigrateAsync();
                     Console.WriteLine("migrated");
@@ -136,7 +136,7 @@ namespace Coflnet.Sky.McConnect
                 var existingCount = await db.McIds.Where(id => id.AccountUuid == minecraftUuid.AccountUuid && id.Verified).CountAsync();
                 logger.LogInformation($"{minecraftUuid.AccountUuid} has {existingCount} verified accounts");
                 minecraftUuid.Verified = true;
-                minecraftUuid.UpdatedAt = DateTime.Now;
+                minecraftUuid.UpdatedAt = DateTime.UtcNow;
                 db.McIds.Update(minecraftUuid);
                 await db.SaveChangesAsync();
 

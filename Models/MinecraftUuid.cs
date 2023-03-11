@@ -22,8 +22,8 @@ namespace Coflnet.Sky.McConnect.Models
 
         public MinecraftUuid()
         {
-            CreatedAt = DateTime.Now;
-            LastRequestedAt = DateTime.Now;
+            CreatedAt = DateTime.UtcNow;
+            LastRequestedAt = DateTime.UtcNow;
         }
     }
 }

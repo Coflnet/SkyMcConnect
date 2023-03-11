@@ -83,7 +83,7 @@ namespace Coflnet.Sky.McConnect
             {
                 await Task.Delay(maxValidationAge / 2, cancelToken);
                 var toRemove = new List<string>();
-                var minTime = DateTime.Now.Subtract(maxValidationAge);
+                var minTime = DateTime.UtcNow.Subtract(maxValidationAge);
                 foreach (var item in connectSercie.ToConnect)
                 {
                     if (item.Value.LastRequestedAt < minTime)
@@ -101,7 +101,7 @@ namespace Coflnet.Sky.McConnect
         private async Task NewAuction(SaveAuction auction)
         {
             if (auction.UId % 1000 == 0)
-                Console.WriteLine("1000 auctions step " + DateTime.Now);
+                Console.WriteLine("1000 auctions step " + DateTime.UtcNow);
             if (!connectSercie.ToConnect.TryGetValue(auction.AuctioneerId, out MinecraftUuid minecraftUuid))
                 return;
             using var factoryScope = scopeFactory.CreateScope();
@@ -130,7 +130,7 @@ namespace Coflnet.Sky.McConnect
 
         private bool IsCorrectAmount(string uuid, long amount, int userId)
         {
-            var time = DateTime.Now;
+            var time = DateTime.UtcNow;
             var secondTime = time.Subtract(TimeSpan.FromMinutes(5));
             var targetAmount = connectSercie.GetAmount(uuid, time, userId);
             Console.WriteLine($"Should be {targetAmount} is {amount}");

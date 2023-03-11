@@ -34,7 +34,9 @@ namespace Coflnet.Sky.McConnect
         {
 
             services.AddHostedService<McConnectService>();
-            services.AddControllers().AddNewtonsoftJson();
+            services.AddControllers().AddNewtonsoftJson(c=>{
+                c.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc;
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SkyMcConnect", Version = "v1" });
