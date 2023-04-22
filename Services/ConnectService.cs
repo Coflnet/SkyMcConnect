@@ -122,6 +122,7 @@ namespace Coflnet.Sky.McConnect
                     Console.WriteLine(e.StackTrace);
                 }
             }
+            await kafkaCreator.CreateTopicIfNotExist(config["TOPICS:VERIFIED"]);
             Console.WriteLine("done with setup");
         }
 
