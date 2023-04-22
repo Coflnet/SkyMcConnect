@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
+using Coflnet.Kafka;
 
 namespace Coflnet.Sky.McConnect
 {
@@ -20,6 +21,7 @@ namespace Coflnet.Sky.McConnect
     public class ConnectService
     {
         private IServiceScopeFactory scopeFactory;
+        private KafkaCreator kafkaCreator;
         private IConfiguration config;
         private readonly string secret;
         public ConcurrentDictionary<string, MinecraftUuid> ToConnect = new ConcurrentDictionary<string, MinecraftUuid>();
@@ -34,10 +36,13 @@ namespace Coflnet.Sky.McConnect
         /// </summary>
         /// <param name="config"></param>
         /// <param name="scopeFactory"></param>
+        /// <param name="logger"></param>
+        /// <param name="kafkaCreator"></param>
         public ConnectService(
             IConfiguration config,
                     IServiceScopeFactory scopeFactory,
-                    ILogger<ConnectService> logger)
+                    ILogger<ConnectService> logger,
+                    KafkaCreator kafkaCreator)
         {
             this.scopeFactory = scopeFactory;
             this.config = config;
@@ -51,6 +56,7 @@ namespace Coflnet.Sky.McConnect
                 BootstrapServers = config["KAFKA_HOST"],
                 LingerMs = 2
             };
+            this.kafkaCreator = kafkaCreator;
         }
 
         /// <summary>
@@ -155,7 +161,7 @@ namespace Coflnet.Sky.McConnect
         {
             try
             {
-                using (var p = new ProducerBuilder<Null, VerificationEvent>(producerConfig).SetValueSerializer(SerializerFactory.GetSerializer<VerificationEvent>()).Build())
+                using (var p = kafkaCreator.BuildProducer<Null, VerificationEvent>())
                 {
                     await p.ProduceAsync(config["TOPICS:VERIFIED"], new Message<Null, VerificationEvent>()
                     {

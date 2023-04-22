@@ -41,7 +41,7 @@ namespace Coflnet.Sky.McConnect
             var newBidTopic = configuration["TOPICS:NEW_BID"];
             var consumerGroup = "mc-connect" + System.Net.Dns.GetHostName().Last();
 
-            var newAuction = KafkaConsumer.ConsumeBatch<SaveAuction>(kafkaHost, newAuctionTopic, async auctions =>
+            var newAuction = KafkaConsumer.ConsumeBatch<SaveAuction>(configuration, newAuctionTopic, async auctions =>
             {
                 foreach (var item in auctions)
                 {
@@ -49,7 +49,7 @@ namespace Coflnet.Sky.McConnect
                 }
             }, cancleToken, consumerGroup);
 
-            var newBid = KafkaConsumer.ConsumeBatch<SaveAuction>(kafkaHost, newBidTopic, async bids =>
+            var newBid = KafkaConsumer.ConsumeBatch<SaveAuction>(configuration, newBidTopic, async bids =>
             {
                 foreach (var item in bids)
                 {
