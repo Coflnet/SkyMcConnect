@@ -39,7 +39,7 @@ namespace Coflnet.Sky.McConnect
             var kafkaHost = configuration["KAFKA_HOST"];
             var newAuctionTopic = configuration["TOPICS:NEW_AUCTION"];
             var newBidTopic = configuration["TOPICS:NEW_BID"];
-            var consumerGroup = "mc-connect" + System.Net.Dns.GetHostName().Last();
+            var consumerGroup = "sky-mc-connect" + System.Net.Dns.GetHostName().Last();
 
             var newAuction = KafkaConsumer.ConsumeBatch<SaveAuction>(configuration, newAuctionTopic, async auctions =>
             {
