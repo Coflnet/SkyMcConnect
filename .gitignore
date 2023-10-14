@@ -1,4 +1,5 @@
 bin
 obj
-!Client/out/generate.sh
-Client/
+
+Client/out
+/Client/*nupkg

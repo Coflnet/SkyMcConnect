@@ -154,7 +154,6 @@ namespace Coflnet.Sky.McConnect
                     ExistingConCount = existingCount
                 });
                 await eventTask;
-                logger.LogInformation("event produced");
             }
         }
 
@@ -169,6 +168,7 @@ namespace Coflnet.Sky.McConnect
                         Value = transactionEvent
                     });
                 }
+                logger.LogInformation($"Produced verification event for {transactionEvent.MinecraftUuid} ({transactionEvent.UserId}) with {transactionEvent.ExistingConCount} existing connections");
             }
             catch (Exception e)
             {
