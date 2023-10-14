@@ -161,11 +161,12 @@ namespace Coflnet.Sky.McConnect
         {
             try
             {
-                using (var p = kafkaCreator.BuildProducer<Null, VerificationEvent>())
+                using (var p = kafkaCreator.BuildProducer<string, VerificationEvent>())
                 {
-                    await p.ProduceAsync(config["TOPICS:VERIFIED"], new Message<Null, VerificationEvent>()
+                    await p.ProduceAsync(config["TOPICS:VERIFIED"], new Message<string, VerificationEvent>()
                     {
-                        Value = transactionEvent
+                        Value = transactionEvent,
+                        Key = $"{transactionEvent.MinecraftUuid}-{transactionEvent.UserId}"
                     });
                 }
                 logger.LogInformation($"Produced verification event for {transactionEvent.MinecraftUuid} ({transactionEvent.UserId}) with {transactionEvent.ExistingConCount} existing connections");
