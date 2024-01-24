@@ -25,6 +25,7 @@ namespace Coflnet.Sky.McConnect
         private IConfiguration config;
         private readonly string secret;
         public ConcurrentDictionary<string, MinecraftUuid> ToConnect = new ConcurrentDictionary<string, MinecraftUuid>();
+        public ConcurrentDictionary<string, Challenge> Challenges = new();
         private ILogger<ConnectService> logger;
         private ProducerConfig producerConfig;
 
@@ -74,7 +75,7 @@ namespace Coflnet.Sky.McConnect
             //if (user?.Accounts?.OrderByDescending(a => a.UpdatedAt).Where(a => a.Verified).FirstOrDefault() == accountInstance)
             response.IsConnected = accountInstance?.Verified ?? false;
 
-            if(minecraftUuid == null)
+            if (minecraftUuid == null)
                 throw new CoflnetException("uuid_is_null", "minecraftUuid is null");
 
             using (var scope = scopeFactory.CreateScope())
@@ -100,6 +101,17 @@ namespace Coflnet.Sky.McConnect
             }
         }
 
+        public async Task AddChallenge(Challenge challenge)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
+                await db.Challenges.AddAsync(challenge);
+                await db.SaveChangesAsync();
+            }
+            Challenges[challenge.AuctionUuid] = challenge;
+        }
+
         public async Task Setup()
         {
             Console.WriteLine("setting up");
@@ -115,6 +127,9 @@ namespace Coflnet.Sky.McConnect
                         .Where(id => !id.Verified)
                         .Where(id => id.LastRequestedAt > minTime)
                         .ToDictionaryAsync(a => a.AccountUuid));
+                    Challenges = new ConcurrentDictionary<string, Challenge>(await db.Challenges
+                        .Where(c => c.CreatedAt > minTime)
+                        .ToDictionaryAsync(c => c.AuctionUuid));
                 }
                 catch (Exception e)
                 {
@@ -175,6 +190,33 @@ namespace Coflnet.Sky.McConnect
             {
                 logger.LogError(e, "Trying to produce verification event");
             }
+        }
+
+        internal async Task Sold(SaveAuction item)
+        {
+            if (!Challenges.TryGetValue(item.Uuid, out Challenge challenge))
+                return;
+            var highestBidder = item.Bids.OrderByDescending(b => b.Amount).First();
+            if (challenge.CreatedAt < highestBidder.Timestamp - TimeSpan.FromMinutes(1))
+                return;
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
+            // challenge completed
+            challenge.BoughtBy = highestBidder.Bidder;
+            challenge.BoughtAt = highestBidder.Timestamp;
+            challenge.CompletedAt = DateTime.UtcNow;
+            db.Challenges.Update(challenge);
+            await db.SaveChangesAsync();
+            // check if enough challenges completed
+            var minTime = DateTime.UtcNow.Subtract(TimeSpan.FromDays(1));
+            var challenges = await db.Challenges.Where(c => c.CompletedAt > minTime).ToListAsync();
+            var matching = challenges.Where(c => c.UserId == challenge.UserId && c.BoughtBy == challenge.BoughtBy).ToList();
+            if (matching.Count < 3)
+            {
+                logger.LogInformation($"Challenge incomplete for {challenge.BoughtBy} ({challenge.UserId}) connected as {challenge.MinecraftUuid} at {challenge.BoughtAt} ");
+                return;
+            }
+            logger.LogInformation($"Challenge completed for {challenge.BoughtBy} ({challenge.UserId}) connected as {challenge.MinecraftUuid} at {challenge.BoughtAt}");
         }
     }
 }

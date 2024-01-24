@@ -3,6 +3,7 @@ using System;
 using Coflnet.Sky.McConnect.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace SkyMcConnect.Migrations
 {
     [DbContext(typeof(ConnectContext))]
-    partial class ConnectContextModelSnapshot : ModelSnapshot
+    [Migration("20240124164007_challenges")]
+    partial class challenges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -14,6 +14,7 @@ namespace Coflnet.Sky.McConnect.Models
         public DbSet<User> Users { get; set; }
 
         public DbSet<MinecraftUuid> McIds { get; set; }
+        public DbSet<Challenge> Challenges { get; set; }
 
         /// <summary>
         /// Creates a new instance of <see cref="ConnectContext"/>
@@ -44,6 +45,11 @@ namespace Coflnet.Sky.McConnect.Models
             modelBuilder.Entity<MinecraftUuid>(entity =>
             {
                 entity.HasIndex(e => e.AccountUuid);
+            });
+            modelBuilder.Entity<Challenge>(entity =>
+            {
+                entity.HasIndex(e => e.AuctionUuid).IsUnique();
+                entity.HasIndex(e => e.UserId);
             });
         }
     }

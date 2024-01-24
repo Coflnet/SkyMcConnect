@@ -71,6 +71,14 @@ namespace Coflnet.Sky.McConnect.Controllers
             return await db.Users.Where(u => externalIds.Contains(u.ExternalId)).Include(u => u.Accounts.Where(a => a.Verified)).ToListAsync();
         }
 
+        [HttpPost]
+        [Route("challenge")]
+        public async Task AddChallenge([FromBody] Challenge challenge)
+        {
+            await db.Challenges.AddAsync(challenge);
+            await db.SaveChangesAsync();
+        }
+
         private async Task<User> GetOrCreateUser(string userId, bool blockSave = false)
         {
             var user = await db.Users.Where(u => u.ExternalId == userId).Include(u => u.Accounts).FirstOrDefaultAsync();

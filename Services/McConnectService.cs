@@ -39,6 +39,7 @@ namespace Coflnet.Sky.McConnect
             var kafkaHost = configuration["KAFKA_HOST"];
             var newAuctionTopic = configuration["TOPICS:NEW_AUCTION"];
             var newBidTopic = configuration["TOPICS:NEW_BID"];
+            var soldAuction = configuration["TOPICS:SOLD_AUCTION"];
             var consumerGroup = "sky-mc-connect" + System.Net.Dns.GetHostName().Last();
 
             var newAuction = KafkaConsumer.ConsumeBatch<SaveAuction>(configuration, newAuctionTopic, async auctions =>
@@ -56,12 +57,27 @@ namespace Coflnet.Sky.McConnect
                     await NewBid(item);
                 }
             }, cancleToken, consumerGroup);
+            var sold = KafkaConsumer.ConsumeBatch<SaveAuction>(configuration, soldAuction, async auctions =>
+            {
+                foreach (var item in auctions)
+                {
+                    try
+                    {
+                        await connectSercie.Sold(item);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.LogError(e, "Error while processing sold auction");
+                    }
+                }
+            }, cancleToken, consumerGroup, 20, AutoOffsetReset.Latest);
             Console.WriteLine("started consuming");
             Console.WriteLine($"There are {connectSercie.ToConnect.Count} waiting for validation");
-            await Task.WhenAny(new Task[] { Wrap(newAuction,"auctions"), Wrap(newBid, "bids"), Wrap(ClearOldFromLookup(cancleToken), "clear") });
+            await Task.WhenAny(new Task[] { Wrap(newAuction, "auctions"), Wrap(newBid, "bids"), Wrap(ClearOldFromLookup(cancleToken), "clear"), Wrap(sold, "sold") });
             throw new Exception("either bids or auctions stopped consuming");
 
         }
+
 
         private async Task Wrap(Task toWarp, string message)
         {
@@ -121,7 +137,7 @@ namespace Coflnet.Sky.McConnect
             await connectSercie.ValidatedLink(linkId);
         }
 
-        
+
 
         public async Task ForceVerify(long amount, string uuid, int linkId)
         {
