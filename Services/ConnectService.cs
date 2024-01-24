@@ -156,21 +156,26 @@ namespace Coflnet.Sky.McConnect
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
 
                 var minecraftUuid = await db.McIds.Where(id => id.Id == linkId).Include(id => id.User).FirstAsync();
-                var existingCount = await db.McIds.Where(id => id.AccountUuid == minecraftUuid.AccountUuid && id.Verified).CountAsync();
-                logger.LogInformation($"{minecraftUuid.AccountUuid} has {existingCount} verified accounts");
-                minecraftUuid.Verified = true;
-                minecraftUuid.UpdatedAt = DateTime.UtcNow;
-                db.McIds.Update(minecraftUuid);
-                await db.SaveChangesAsync();
-
-                var eventTask = ProduceEvent(new VerificationEvent()
-                {
-                    MinecraftUuid = minecraftUuid.AccountUuid,
-                    UserId = minecraftUuid.User.ExternalId,
-                    ExistingConCount = existingCount
-                });
-                await eventTask;
+                await ValidatedAccount(db, minecraftUuid);
             }
+        }
+
+        private async Task ValidatedAccount(ConnectContext db, MinecraftUuid minecraftUuid)
+        {
+            var existingCount = await db.McIds.Where(id => id.AccountUuid == minecraftUuid.AccountUuid && id.Verified).CountAsync();
+            logger.LogInformation($"{minecraftUuid.AccountUuid} has {existingCount} verified accounts");
+            minecraftUuid.Verified = true;
+            minecraftUuid.UpdatedAt = DateTime.UtcNow;
+            db.McIds.Update(minecraftUuid);
+            await db.SaveChangesAsync();
+
+            var eventTask = ProduceEvent(new VerificationEvent()
+            {
+                MinecraftUuid = minecraftUuid.AccountUuid,
+                UserId = minecraftUuid.User.ExternalId,
+                ExistingConCount = existingCount
+            });
+            await eventTask;
         }
 
         public async Task ProduceEvent(VerificationEvent transactionEvent)
@@ -210,14 +215,25 @@ namespace Coflnet.Sky.McConnect
             await db.SaveChangesAsync();
             // check if enough challenges completed
             var minTime = DateTime.UtcNow.Subtract(TimeSpan.FromDays(1));
-            var challenges = await db.Challenges.Where(c => c.CompletedAt > minTime).ToListAsync();
+            var challenges = await db.Challenges.Where(c => c.CompletedAt > minTime && c.BoughtBy != null).ToListAsync();
             var matching = challenges.Where(c => c.UserId == challenge.UserId && c.BoughtBy == challenge.BoughtBy).ToList();
-            if (matching.Count < 3)
+            if (matching.Count < 3 || matching.Count <= challenges.Count / 2)
             {
                 logger.LogInformation($"Challenge incomplete for {challenge.BoughtBy} ({challenge.UserId}) connected as {challenge.MinecraftUuid} at {challenge.BoughtAt} ");
                 return;
             }
             logger.LogInformation($"Challenge completed for {challenge.BoughtBy} ({challenge.UserId}) connected as {challenge.MinecraftUuid} at {challenge.BoughtAt}");
+            var user = await db.Users.Where(u => u.ExternalId == challenge.UserId).Include(u => u.Accounts).FirstOrDefaultAsync();
+            var minecraftUuid = user.Accounts.Where(a => a.AccountUuid == challenge.MinecraftUuid).FirstOrDefault();
+            if(minecraftUuid == null)
+            {
+                minecraftUuid = new MinecraftUuid() { AccountUuid = challenge.MinecraftUuid };
+                user.Accounts.Add(minecraftUuid);
+                db.Update(user);
+                await db.SaveChangesAsync();
+            }
+            await ValidatedAccount(db, minecraftUuid);
+
         }
     }
 }
