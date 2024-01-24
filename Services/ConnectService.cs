@@ -106,6 +106,7 @@ namespace Coflnet.Sky.McConnect
             using (var scope = scopeFactory.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
+                challenge.CreatedAt = DateTime.UtcNow;
                 await db.Challenges.AddAsync(challenge);
                 await db.SaveChangesAsync();
             }

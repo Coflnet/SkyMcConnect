@@ -75,8 +75,7 @@ namespace Coflnet.Sky.McConnect.Controllers
         [Route("challenge")]
         public async Task AddChallenge([FromBody] Challenge challenge)
         {
-            await db.Challenges.AddAsync(challenge);
-            await db.SaveChangesAsync();
+            await connectService.AddChallenge(challenge);
         }
 
         private async Task<User> GetOrCreateUser(string userId, bool blockSave = false)
