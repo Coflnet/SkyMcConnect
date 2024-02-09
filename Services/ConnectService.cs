@@ -215,7 +215,7 @@ namespace Coflnet.Sky.McConnect
             await db.SaveChangesAsync();
             // check if enough challenges completed
             var minTime = DateTime.UtcNow.Subtract(TimeSpan.FromDays(1));
-            var challenges = await db.Challenges.Where(c => c.CompletedAt > minTime && c.BoughtBy != null).ToListAsync();
+            var challenges = await db.Challenges.Where(c => c.UserId == challenge.UserId && c.CompletedAt > minTime && c.BoughtBy != null).ToListAsync();
             var matching = challenges.Where(c => c.UserId == challenge.UserId && c.BoughtBy == challenge.BoughtBy).ToList();
             if (matching.Count < 5 || matching.Count <= challenges.Count / 2)
             {
