@@ -219,7 +219,7 @@ namespace Coflnet.Sky.McConnect
             var matching = challenges.Where(c => c.UserId == challenge.UserId && c.BoughtBy == challenge.BoughtBy).ToList();
             if (matching.Count < 5 || matching.Count <= challenges.Count / 2)
             {
-                logger.LogInformation($"Challenge incomplete for {challenge.BoughtBy} ({challenge.UserId}) connected as {challenge.MinecraftUuid} at {challenge.BoughtAt} ");
+                logger.LogInformation($"Challenge incomplete for {challenge.BoughtBy} ({challenge.UserId}) connected as {challenge.MinecraftUuid} at {challenge.BoughtAt} {matching.Count}/{challenges.Count}");
                 return;
             }
             logger.LogInformation($"Challenge completed for {challenge.BoughtBy} ({challenge.UserId}) connected as {challenge.MinecraftUuid} at {challenge.BoughtAt}");
