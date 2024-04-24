@@ -1,9 +1,9 @@
-VERSION=0.2.0
+VERSION=0.2.1
 
 docker run --rm -v "${PWD}:/local" --network host -u $(id -u ${USER}):$(id -g ${USER})  openapitools/openapi-generator-cli generate \
 -i http://localhost:5021/swagger/v1/swagger.json \
 -g csharp \
--o /local/out --additional-properties=packageName=Coflnet.Sky.McConnect,packageVersion=$VERSION,licenseId=MIT
+-o /local/out --additional-properties=packageName=Coflnet.Sky.McConnect,packageVersion=$VERSION,licenseId=MIT,targetFramework=net6.0
 
 cd out
 path=src/Coflnet.Sky.McConnect/Coflnet.Sky.McConnect.csproj
