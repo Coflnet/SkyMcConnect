@@ -224,10 +224,10 @@ namespace Coflnet.Sky.McConnect
             }
             logger.LogInformation($"Challenge completed for {challenge.BoughtBy} ({challenge.UserId}) connected as {challenge.MinecraftUuid} at {challenge.BoughtAt}");
             var user = await db.Users.Where(u => u.ExternalId == challenge.UserId).Include(u => u.Accounts).FirstOrDefaultAsync();
-            var minecraftUuid = user.Accounts.Where(a => a.AccountUuid == challenge.MinecraftUuid).FirstOrDefault();
+            var minecraftUuid = user.Accounts.Where(a => a.AccountUuid == challenge.BoughtBy).FirstOrDefault();
             if(minecraftUuid == null)
             {
-                minecraftUuid = new MinecraftUuid() { AccountUuid = challenge.MinecraftUuid };
+                minecraftUuid = new MinecraftUuid() { AccountUuid = challenge.BoughtBy };
                 user.Accounts.Add(minecraftUuid);
                 db.Update(user);
                 await db.SaveChangesAsync();
