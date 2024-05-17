@@ -166,6 +166,8 @@ namespace Coflnet.Sky.McConnect
             logger.LogInformation($"{minecraftUuid.AccountUuid} has {existingCount} verified accounts");
             minecraftUuid.Verified = true;
             minecraftUuid.UpdatedAt = DateTime.UtcNow;
+            if (minecraftUuid.LastRequestedAt < DateTime.UtcNow.Subtract(TimeSpan.FromDays(1)))
+                minecraftUuid.LastRequestedAt = DateTime.UtcNow;
             db.McIds.Update(minecraftUuid);
             await db.SaveChangesAsync();
 
@@ -225,7 +227,7 @@ namespace Coflnet.Sky.McConnect
             logger.LogInformation($"Challenge completed for {challenge.BoughtBy} ({challenge.UserId}) connected as {challenge.MinecraftUuid} at {challenge.BoughtAt}");
             var user = await db.Users.Where(u => u.ExternalId == challenge.UserId).Include(u => u.Accounts).FirstOrDefaultAsync();
             var minecraftUuid = user.Accounts.Where(a => a.AccountUuid == challenge.BoughtBy).FirstOrDefault();
-            if(minecraftUuid == null)
+            if (minecraftUuid == null)
             {
                 minecraftUuid = new MinecraftUuid() { AccountUuid = challenge.BoughtBy };
                 user.Accounts.Add(minecraftUuid);
