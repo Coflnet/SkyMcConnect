@@ -219,7 +219,7 @@ namespace Coflnet.Sky.McConnect
             var minTime = DateTime.UtcNow.Subtract(TimeSpan.FromDays(1));
             var challenges = await db.Challenges.Where(c => c.UserId == challenge.UserId && c.CompletedAt > minTime && c.BoughtBy != null).ToListAsync();
             var matching = challenges.Where(c => c.UserId == challenge.UserId && c.BoughtBy == challenge.BoughtBy).ToList();
-            if (matching.Count < 3 || matching.Count <= challenges.Count / 2 && matching.Count < 7)
+            if (matching.Count < 3 || matching.Count <= challenges.Count / 2 && matching.Count < 5)
             {
                 logger.LogInformation($"Challenge incomplete for {challenge.BoughtBy} ({challenge.UserId}) connected as {challenge.MinecraftUuid} at {challenge.BoughtAt} {matching.Count}/{challenges.Count}");
                 return;
