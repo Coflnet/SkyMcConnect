@@ -108,5 +108,17 @@ namespace Coflnet.Sky.McConnect.Controllers
             var con = await db.McIds.Where(i => i.User == user && i.AccountUuid == mcUuid).FirstAsync();
             await connectService.ValidatedLink(con.Id);
         }
+
+        [HttpDelete("user/{userId}")]
+        public async Task DeleteUser(string userId)
+        {
+            var user = await db.Users.Where(u => u.ExternalId == userId).Include(u => u.Accounts).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return;
+            }
+            db.Users.Remove(user);
+            await db.SaveChangesAsync();
+        }
     }
 }
