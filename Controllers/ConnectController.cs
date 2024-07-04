@@ -78,6 +78,14 @@ namespace Coflnet.Sky.McConnect.Controllers
             await connectService.AddChallenge(challenge);
         }
 
+        [HttpGet]
+        [Route("challenges/{userId}")]
+        public async Task<IEnumerable<Challenge>> GetChallenges(string userId)
+        {
+            var aWeekAgo = DateTime.UtcNow.AddDays(-7);
+            return await db.Challenges.Where(c => c.UserId == userId && c.CompletedAt > aWeekAgo).ToListAsync();
+        }
+
         private async Task<User> GetOrCreateUser(string userId, bool blockSave = false)
         {
             var user = await db.Users.Where(u => u.ExternalId == userId).Include(u => u.Accounts).FirstOrDefaultAsync();
