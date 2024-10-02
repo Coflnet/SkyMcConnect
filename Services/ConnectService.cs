@@ -21,7 +21,7 @@ namespace Coflnet.Sky.McConnect
     public class ConnectService
     {
         private IServiceScopeFactory scopeFactory;
-        private KafkaCreator kafkaCreator;
+        private Kafka.KafkaCreator kafkaCreator;
         private IConfiguration config;
         private readonly string secret;
         public ConcurrentDictionary<string, MinecraftUuid> ToConnect = new ConcurrentDictionary<string, MinecraftUuid>();
@@ -43,7 +43,7 @@ namespace Coflnet.Sky.McConnect
             IConfiguration config,
                     IServiceScopeFactory scopeFactory,
                     ILogger<ConnectService> logger,
-                    KafkaCreator kafkaCreator)
+                    Kafka.KafkaCreator kafkaCreator)
         {
             this.scopeFactory = scopeFactory;
             this.config = config;
