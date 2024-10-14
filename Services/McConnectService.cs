@@ -94,7 +94,7 @@ namespace Coflnet.Sky.McConnect
 
         private async Task ClearOldFromLookup(CancellationToken cancelToken)
         {
-            var maxValidationAge = TimeSpan.FromMinutes(10);
+            var maxValidationAge = TimeSpan.FromMinutes(20);
             while (!cancelToken.IsCancellationRequested)
             {
                 await Task.Delay(maxValidationAge / 2, cancelToken);
