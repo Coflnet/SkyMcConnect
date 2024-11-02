@@ -116,6 +116,26 @@ namespace Coflnet.Sky.McConnect.Controllers
             var con = await db.McIds.Where(i => i.User == user && i.AccountUuid == mcUuid).FirstAsync();
             await connectService.ValidatedLink(con.Id);
         }
+        /// <summary>
+        /// Removes the connection between a user and a minecraft account
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="mcUuid"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("user/{userId}/{mcUuid}")]
+        public async Task RemoveMcAccount(string userId, string mcUuid)
+        {
+            var user = await GetOrCreateUser(userId);
+            var con = await db.McIds.Where(i => i.User == user && i.AccountUuid == mcUuid).FirstAsync();
+            if(con.LastRequestedAt > DateTime.UtcNow.AddDays(-30))
+            {
+                throw new Core.CoflnetException("tooRecent", "You can't remove an account that was used in the last 30 days");
+            }
+            con.Verified = false;
+            con.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
 
         [HttpDelete("user/{userId}")]
         public async Task DeleteUser(string userId)
