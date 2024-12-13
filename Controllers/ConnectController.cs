@@ -128,9 +128,10 @@ namespace Coflnet.Sky.McConnect.Controllers
         {
             var user = await GetOrCreateUser(userId);
             var con = await db.McIds.Where(i => i.User == user && i.AccountUuid == mcUuid).FirstAsync();
-            if(con.LastRequestedAt > DateTime.UtcNow.AddDays(-30))
+            var timeLeft = DateTime.UtcNow - con.LastRequestedAt.AddDays(30);
+            if (timeLeft.Days < 0)
             {
-                throw new Core.CoflnetException("tooRecent", "You can't remove an account that was used in the last 30 days");
+                throw new Core.CoflnetException("tooRecent", "You can't remove an account that was used in the last 30 days. (time left: " + (timeLeft.Days * -1)+ " days)");
             }
             con.Verified = false;
             con.UpdatedAt = DateTime.UtcNow;
