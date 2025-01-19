@@ -105,7 +105,9 @@ namespace Coflnet.Sky.McConnect.Controllers
         [Route("minecraft/{mcUuid}")]
         public async Task<User> GetUser(string mcUuid)
         {
-            return await db.McIds.Where(id => id.AccountUuid == mcUuid && id.Verified).OrderByDescending(m => m.LastRequestedAt).Select(id => id.User).FirstOrDefaultAsync();
+            return await db.McIds.Where(id => id.AccountUuid == mcUuid && id.Verified).Include(u => u.User).ThenInclude(u => u.Accounts.Where(a => a.Verified))
+                .OrderByDescending(m => m.LastRequestedAt)
+                .Select(id => id.User).FirstOrDefaultAsync();
         }
         [HttpPost]
         [Route("user/{userId}/verify")]
@@ -131,7 +133,7 @@ namespace Coflnet.Sky.McConnect.Controllers
             var timeLeft = DateTime.UtcNow - con.LastRequestedAt.AddDays(30);
             if (timeLeft.Days < 0)
             {
-                throw new Core.CoflnetException("tooRecent", "You can't remove an account that was used in the last 30 days. (time left: " + (timeLeft.Days * -1)+ " days)");
+                throw new Core.CoflnetException("tooRecent", "You can't remove an account that was used in the last 30 days. (time left: " + (timeLeft.Days * -1) + " days)");
             }
             con.Verified = false;
             con.UpdatedAt = DateTime.UtcNow;
