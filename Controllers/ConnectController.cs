@@ -140,16 +140,31 @@ namespace Coflnet.Sky.McConnect.Controllers
             await db.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Deletes the user record and anonymizes the minecraft accounts that were connected to it.
+        /// The account rows themselves are kept (they are referenced by challenges and may be
+        /// verified by someone else later), only the link to this user and the verification are dropped.
+        /// </summary>
+        /// <param name="userId">the external id of the user to delete</param>
+        /// <returns>the uuids of the accounts that were verified for this user before deletion</returns>
         [HttpDelete("user/{userId}")]
-        public async Task DeleteUser(string userId)
+        public async Task<List<string>> DeleteUser(string userId)
         {
             var user = await db.Users.Where(u => u.ExternalId == userId).Include(u => u.Accounts).FirstOrDefaultAsync();
             if (user == null)
             {
-                return;
+                return new List<string>();
+            }
+            var verifiedUuids = user.Accounts.Where(a => a.Verified).Select(a => a.AccountUuid).ToList();
+            foreach (var account in user.Accounts)
+            {
+                account.User = null;
+                account.UpdatedAt = DateTime.UtcNow;
+                db.Update(account);
             }
             db.Users.Remove(user);
             await db.SaveChangesAsync();
+            return verifiedUuids;
         }
     }
 }
