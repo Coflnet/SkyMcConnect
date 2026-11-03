@@ -73,9 +73,14 @@ namespace Coflnet.Sky.McConnect.Controllers
 
         [HttpPost]
         [Route("challenge")]
-        public async Task AddChallenge([FromBody] Challenge challenge)
+        [ProducesResponseType(204)]
+        [ProducesResponseType(409)]
+        public async Task<IActionResult> AddChallenge([FromBody] Challenge challenge)
         {
-            await connectService.AddChallenge(challenge);
+            var status = await connectService.AddChallenge(challenge);
+            if (status == ChallengeReservationStatus.Conflict)
+                return Conflict();
+            return NoContent();
         }
 
         [HttpGet]

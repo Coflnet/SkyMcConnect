@@ -101,16 +101,43 @@ namespace Coflnet.Sky.McConnect
             }
         }
 
-        public async Task AddChallenge(Challenge challenge)
+        internal async Task<ChallengeReservationStatus> AddChallenge(Challenge challenge)
         {
             using (var scope = scopeFactory.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ConnectContext>();
-                challenge.CreatedAt = DateTime.UtcNow;
-                await db.Challenges.AddAsync(challenge);
-                await db.SaveChangesAsync();
+                var reservation = await ReserveChallenge(db, challenge);
+                if (reservation.Status == ChallengeReservationStatus.Conflict)
+                    return reservation.Status;
+                Challenges[challenge.AuctionUuid] = reservation.Challenge;
+                return reservation.Status;
             }
-            Challenges[challenge.AuctionUuid] = challenge;
+        }
+
+        internal static async Task<(ChallengeReservationStatus Status, Challenge Challenge)> ReserveChallenge(ConnectContext db, Challenge challenge)
+        {
+            challenge.Id = 0;
+            challenge.BoughtBy = null;
+            challenge.BoughtAt = default;
+            challenge.CompletedAt = default;
+            challenge.CreatedAt = DateTime.UtcNow;
+            await db.Challenges.AddAsync(challenge);
+            try
+            {
+                await db.SaveChangesAsync();
+                return (ChallengeReservationStatus.Created, challenge);
+            }
+            catch (DbUpdateException)
+            {
+                db.Entry(challenge).State = EntityState.Detached;
+                var existing = await db.Challenges.AsNoTracking()
+                    .SingleOrDefaultAsync(c => c.AuctionUuid == challenge.AuctionUuid);
+                if (existing == null)
+                    throw;
+                if (existing.UserId == challenge.UserId && existing.MinecraftUuid == challenge.MinecraftUuid)
+                    return (ChallengeReservationStatus.Replay, existing);
+                return (ChallengeReservationStatus.Conflict, existing);
+            }
         }
 
         public async Task Setup()
