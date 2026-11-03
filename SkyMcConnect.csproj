@@ -5,11 +5,8 @@
     <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
   <PropertyGroup>
-    <DefaultItemExcludes>$(DefaultItemExcludes);Client\**\*</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Client\**\*;Tests\**\*</DefaultItemExcludes>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="Tests\**\*.cs" />
-  </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="../dev/hypixel.csproj" />
