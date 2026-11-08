@@ -42,22 +42,22 @@ namespace Coflnet.Sky.McConnect
             var soldAuction = configuration["TOPICS:SOLD_AUCTION"];
             var consumerGroup = "sky-mc-connect" + System.Net.Dns.GetHostName().Last();
 
-            var newAuction = Kafka.KafkaConsumer.ConsumeBatch<SaveAuction>(configuration, newAuctionTopic, async auctions =>
+            var newAuction = RunConsumer("auctions", newAuctionTopic, consumerGroup, 500, AutoOffsetReset.Earliest, async auctions =>
             {
                 foreach (var item in auctions)
                 {
                     await NewAuction(item);
                 }
-            }, cancleToken, consumerGroup);
+            }, cancleToken);
 
-            var newBid = Kafka.KafkaConsumer.ConsumeBatch<SaveAuction>(configuration, newBidTopic, async bids =>
+            var newBid = RunConsumer("bids", newBidTopic, consumerGroup, 500, AutoOffsetReset.Earliest, async bids =>
             {
                 foreach (var item in bids)
                 {
                     await NewBid(item);
                 }
-            }, cancleToken, consumerGroup);
-            var sold = Kafka.KafkaConsumer.ConsumeBatch<SaveAuction>(configuration, soldAuction, async auctions =>
+            }, cancleToken);
+            var sold = RunConsumer("sold", soldAuction, consumerGroup, 20, AutoOffsetReset.Latest, async auctions =>
             {
                 foreach (var item in auctions)
                 {
@@ -70,14 +70,28 @@ namespace Coflnet.Sky.McConnect
                         logger.LogError(e, "Error while processing sold auction");
                     }
                 }
-            }, cancleToken, consumerGroup, 20, AutoOffsetReset.Latest);
+            }, cancleToken);
             Console.WriteLine("started consuming");
             Console.WriteLine($"There are {connectSercie.ToConnect.Count} waiting for validation");
             await Task.WhenAny(new Task[] { Wrap(newAuction, "auctions"), Wrap(newBid, "bids"), Wrap(ClearOldFromLookup(cancleToken), "clear"), Wrap(sold, "sold") });
-            throw new Exception("either bids or auctions stopped consuming");
+            cancleToken.ThrowIfCancellationRequested();
+            throw new Exception("clear-old-lookup loop ended unexpectedly while consumers are still running");
 
         }
 
+
+        private Task RunConsumer(string name, string topic, string consumerGroup, int batchSize, AutoOffsetReset offsetReset,
+            Func<IEnumerable<SaveAuction>, Task> handler, CancellationToken cancleToken)
+        {
+            var backoff = new ConsumeBackoff();
+            return ConsumeRetryLoop.RunAsync("mc-connect " + name,
+                () => Kafka.KafkaConsumer.ConsumeBatch<SaveAuction>(configuration, topic, async batch =>
+                {
+                    await handler(batch);
+                    backoff.Reset();
+                }, cancleToken, consumerGroup, batchSize, offsetReset),
+                backoff, logger, cancleToken);
+        }
 
         private async Task Wrap(Task toWarp, string message)
         {

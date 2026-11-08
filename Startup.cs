@@ -46,16 +46,30 @@ namespace Coflnet.Sky.McConnect
             });
 
             var serverVersion = new MariaDbServerVersion(new Version(Configuration["MARIADB_VERSION"]));
+            AddDatabaseTls(services);
+            var connectionString = DatabaseTls.ConnectionString(Configuration, "DB_CONNECTION");
             services.AddDbContext<ConnectContext>(
-                dbContextOptions => dbContextOptions
-                    .UseMySql(Configuration["DB_CONNECTION"], serverVersion)
-                    .EnableSensitiveDataLogging() // <-- These two calls are optional but help
-                //    .EnableDetailedErrors()       // <-- with debugging (remove for production).
+                (provider, dbContextOptions) =>
+                {
+                    dbContextOptions
+                        .UseMySql(connectionString, serverVersion)
+                        .EnableSensitiveDataLogging(); // <-- optional but helps with debugging
+                    if (DatabaseTls.IsEnabled(Configuration))
+                        dbContextOptions.AddInterceptors(provider.GetRequiredService<DatabaseTlsInterceptor>());
+                }
             );
             services.AddSingleton<ConnectService>();
             services.AddSingleton<Kafka.KafkaCreator>();
             services.AddJaeger(Configuration);
 
+        }
+
+        private void AddDatabaseTls(IServiceCollection services)
+        {
+            if (!DatabaseTls.IsEnabled(Configuration))
+                return;
+            services.AddSingleton(_ => Coflnet.Core.Security.PemTlsOptions.FromConfiguration(Configuration.GetSection("DB:TLS")));
+            services.AddSingleton<DatabaseTlsInterceptor>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
